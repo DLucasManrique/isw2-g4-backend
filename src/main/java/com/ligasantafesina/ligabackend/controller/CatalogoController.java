@@ -1,8 +1,8 @@
 package com.ligasantafesina.ligabackend.controller;
 
-import com.ligasantafesina.ligabackend.entity.Arbitro;
-import com.ligasantafesina.ligabackend.entity.Cancha;
-import com.ligasantafesina.ligabackend.entity.Torneo;
+import com.ligasantafesina.ligabackend.dto.ArbitroResponse;
+import com.ligasantafesina.ligabackend.dto.CanchaResponse;
+import com.ligasantafesina.ligabackend.dto.TorneoResponse;
 import com.ligasantafesina.ligabackend.service.CatalogoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,17 +19,17 @@ public class CatalogoController {
     private CatalogoService catalogoService;
 
     @GetMapping("/torneos")
-    public List<Torneo> obtenerTorneos() {
+    public List<TorneoResponse> obtenerTorneos() {
         return catalogoService.listarTorneos();
     }
 
     @GetMapping("/canchas")
-    public List<Cancha> obtenerCanchas() {
-        return catalogoService.listarCanchas(); // O ajustado a tu instancia
+    public List<CanchaResponse> obtenerCanchas() {
+        return catalogoService.listarCanchas();
     }
 
     @GetMapping("/arbitros")
-    public List<Arbitro> obtenerArbitros() {
+    public List<ArbitroResponse> obtenerArbitros() {
         return catalogoService.listarArbitros();
     }
 }
