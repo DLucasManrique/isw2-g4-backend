@@ -33,7 +33,7 @@ public class PartidoService {
         if (request.equipoLocalId().equals(request.equipoVisitanteId())) {
             throw new PartidoInvalidoException("El equipo local y el visitante deben ser diferentes.");
         }
-        if (!torneoRepository.existsById(request.torneoId().longValue())) {
+        if (!torneoRepository.existsById(request.torneoId())) {
             throw new RecursoNoEncontradoException("No existe el torneo indicado.");
         }
         Equipo local = equipoRepository.findById(request.equipoLocalId())
@@ -46,10 +46,10 @@ public class PartidoService {
         if (!visitante.getTorneoId().equals(request.torneoId())) {
             throw new PartidoInvalidoException("El equipo visitante no pertenece al torneo indicado.");
         }
-        if (!canchaRepository.existsById(request.canchaId().longValue())) {
+        if (!canchaRepository.existsById(request.canchaId())) {
             throw new RecursoNoEncontradoException("No existe la cancha indicada.");
         }
-        if (!arbitroRepository.existsById(request.arbitroId().longValue())) {
+        if (!arbitroRepository.existsById(request.arbitroId())) {
             throw new RecursoNoEncontradoException("No existe el árbitro indicado.");
         }
         LocalDateTime desde = request.fechaHoraInicio().minusHours(2);
