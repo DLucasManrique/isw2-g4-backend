@@ -13,16 +13,17 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class AuthService {
     private final UsuarioRepository repository;
-    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    private final BCryptPasswordEncoder passwordEncoder;
 
-    public AuthService(UsuarioRepository repository) {
+    public AuthService(UsuarioRepository repository, BCryptPasswordEncoder passwordEncoder) {
         this.repository = repository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     public LoginResponse login(LoginRequest request) {
         Usuario usuario = repository.findByUsername(request.username())
                 .orElseThrow(CredencialesInvalidasException::new);
-        if (!usuario.isActivo() || !passwordEncoder.matches(request.password(), usuario.getPasswordHash())) {
+        if (!Boolean.TRUE.equals(usuario.getActivo()) || !passwordEncoder.matches(request.password(), usuario.getPasswordHash())) {
             throw new CredencialesInvalidasException();
         }
         return new LoginResponse(usuario.getId(), usuario.getUsername(),
