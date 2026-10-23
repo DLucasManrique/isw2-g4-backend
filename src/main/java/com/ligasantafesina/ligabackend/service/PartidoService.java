@@ -2,13 +2,17 @@ package com.ligasantafesina.ligabackend.service;
 
 import com.ligasantafesina.ligabackend.dto.PartidoRequest;
 import com.ligasantafesina.ligabackend.dto.PartidoResponse;
+import com.ligasantafesina.ligabackend.dto.PartidoConsultaResponse;
+import com.ligasantafesina.ligabackend.dto.MarcadorResponse;
 import com.ligasantafesina.ligabackend.entity.Equipo;
 import com.ligasantafesina.ligabackend.entity.Partido;
 import com.ligasantafesina.ligabackend.exception.*;
 import com.ligasantafesina.ligabackend.repository.*;
 import org.springframework.stereotype.Service;
+import org.springframework.data.domain.Sort;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 public class PartidoService {
@@ -17,15 +21,40 @@ public class PartidoService {
     private final EquipoRepository equipoRepository;
     private final CanchaRepository canchaRepository;
     private final ArbitroRepository arbitroRepository;
+    private final ResultadoPartidoRepository resultadoPartidoRepository;
 
     public PartidoService(PartidoRepository partidoRepository, TorneoRepository torneoRepository,
                           EquipoRepository equipoRepository, CanchaRepository canchaRepository,
-                          ArbitroRepository arbitroRepository) {
+                          ArbitroRepository arbitroRepository, ResultadoPartidoRepository resultadoPartidoRepository) {
         this.partidoRepository = partidoRepository;
         this.torneoRepository = torneoRepository;
         this.equipoRepository = equipoRepository;
         this.canchaRepository = canchaRepository;
         this.arbitroRepository = arbitroRepository;
+        this.resultadoPartidoRepository = resultadoPartidoRepository;
+    }
+
+    @Transactional(readOnly = true)
+    public List<PartidoConsultaResponse> listar() {
+        return partidoRepository.findAll(Sort.by("fechaHoraInicio", "id")).stream()
+                .map(this::aConsultaResponse)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public PartidoConsultaResponse obtenerPorId(Integer id) {
+        Partido partido = partidoRepository.findById(id)
+                .orElseThrow(() -> new RecursoNoEncontradoException("No existe el partido indicado."));
+        return aConsultaResponse(partido);
+    }
+
+    private PartidoConsultaResponse aConsultaResponse(Partido partido) {
+        MarcadorResponse marcador = resultadoPartidoRepository.obtenerMarcador(
+                partido.getId(), partido.getEquipoLocalId(), partido.getEquipoVisitanteId());
+        return new PartidoConsultaResponse(partido.getId(), partido.getTorneoId(), partido.getNumeroFecha(),
+                partido.getEquipoLocalId(), partido.getEquipoVisitanteId(), partido.getCanchaId(),
+                partido.getArbitroId(), partido.getFechaHoraInicio(), partido.getEstado(),
+                marcador.golesLocal(), marcador.golesVisitante());
     }
 
     @Transactional
