@@ -8,5 +8,8 @@ import java.util.List;
 
 @Repository
 public interface EventoPartidoRepository extends JpaRepository<EventoPartido, Long> {
+
     List<EventoPartido> findByPartidoId(Long partidoId);
+
+    List<EventoPartido> findByJugadorId(Long jugadorId);
 }

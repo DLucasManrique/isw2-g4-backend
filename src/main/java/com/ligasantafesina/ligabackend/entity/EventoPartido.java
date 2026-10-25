@@ -17,10 +17,11 @@ public class EventoPartido {
     @Column(nullable = false)
     private Long jugadorId;
 
+    @Column(name = "equipo_id")
     private Long equipoId;
 
     @Column(nullable = false)
-    private String tipoEvento; // "GOL", "TARJETA_AMARILLA", "TARJETA_ROJA", "AUTOGOL"
+    private String tipoEvento; // "GOL", "TARJETA_AMARILLA", "TARJETA_ROJA"
 
     private Integer minuto;
 
