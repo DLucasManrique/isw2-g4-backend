@@ -4,6 +4,9 @@ import com.ligasantafesina.ligabackend.dto.*;
 import com.ligasantafesina.ligabackend.entity.Equipo;
 import com.ligasantafesina.ligabackend.exception.*;
 import com.ligasantafesina.ligabackend.repository.EquipoRepository;
+import com.ligasantafesina.ligabackend.repository.PartidoRepository;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,8 +16,12 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class EquipoService {
     private final EquipoRepository repository;
+    private final PartidoRepository partidoRepository;
 
-    public EquipoService(EquipoRepository repository) { this.repository = repository; }
+    public EquipoService(EquipoRepository repository, PartidoRepository partidoRepository) {
+        this.repository = repository;
+        this.partidoRepository = partidoRepository;
+    }
 
     @Transactional
     public EquipoResponse crear(EquipoRequest request) {
@@ -35,6 +42,11 @@ public class EquipoService {
     @Transactional
     public EquipoResponse modificar(Integer id, EquipoRequest request) {
         Equipo equipo = obtener(id);
+        if (!equipo.getTorneoId().equals(request.torneoId())
+                && partidoRepository.existsByEquipoLocalIdOrEquipoVisitanteId(id, id)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "No se puede cambiar de torneo un equipo que ya tiene partidos asociados.");
+        }
         validarTorneo(request.torneoId());
         String nombre = request.nombre().trim();
         if (repository.existsByTorneoIdAndNombreAndIdNot(request.torneoId(), nombre, id)) {

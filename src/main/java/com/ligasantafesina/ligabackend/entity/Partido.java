@@ -57,4 +57,5 @@ public class Partido {
     public Integer getArbitroId() { return arbitroId; }
     public LocalDateTime getFechaHoraInicio() { return fechaHoraInicio; }
     public String getEstado() { return estado; }
+    public void cambiarEstado(String estado) { this.estado = estado; }
 }

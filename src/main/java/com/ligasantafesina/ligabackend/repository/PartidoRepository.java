@@ -7,6 +7,8 @@ import org.springframework.data.repository.query.Param;
 import java.time.LocalDateTime;
 
 public interface PartidoRepository extends JpaRepository<Partido, Integer> {
+    boolean existsByEquipoLocalIdOrEquipoVisitanteId(Integer equipoLocalId, Integer equipoVisitanteId);
+
     @Query("""
             SELECT COUNT(p) > 0 FROM Partido p
             WHERE p.canchaId = :canchaId
