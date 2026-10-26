@@ -3,6 +3,7 @@ package com.ligasantafesina.ligabackend.controller;
 import com.ligasantafesina.ligabackend.dto.PartidoRequest;
 import com.ligasantafesina.ligabackend.dto.PartidoResponse;
 import com.ligasantafesina.ligabackend.dto.PartidoConsultaResponse;
+import com.ligasantafesina.ligabackend.dto.EstadoPartidoRequest;
 import com.ligasantafesina.ligabackend.service.PartidoService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -33,5 +34,11 @@ public class PartidoController {
     public ResponseEntity<PartidoResponse> crear(@Valid @RequestBody PartidoRequest request) {
         PartidoResponse response = service.crear(request);
         return ResponseEntity.created(URI.create("/api/partidos/" + response.id())).body(response);
+    }
+
+    @PatchMapping("/{id}/estado")
+    public PartidoResponse cambiarEstado(@PathVariable Integer id,
+                                        @Valid @RequestBody EstadoPartidoRequest request) {
+        return service.cambiarEstado(id, request.estado());
     }
 }

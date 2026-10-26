@@ -11,6 +11,8 @@ import com.ligasantafesina.ligabackend.repository.*;
 import org.springframework.stereotype.Service;
 import org.springframework.data.domain.Sort;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -46,6 +48,22 @@ public class PartidoService {
         Partido partido = partidoRepository.findById(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException("No existe el partido indicado."));
         return aConsultaResponse(partido);
+    }
+
+    @Transactional
+    public PartidoResponse cambiarEstado(Integer id, String estado) {
+        Partido partido = partidoRepository.findById(id)
+                .orElseThrow(() -> new RecursoNoEncontradoException("No existe el partido indicado."));
+        boolean permitida = "PROGRAMADO".equals(partido.getEstado())
+                && ("EN_JUEGO".equals(estado) || "SUSPENDIDO".equals(estado))
+                || "EN_JUEGO".equals(partido.getEstado())
+                && ("FINALIZADO".equals(estado) || "SUSPENDIDO".equals(estado));
+        if (!permitida) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "No se puede pasar de " + partido.getEstado() + " a " + estado + ".");
+        }
+        partido.cambiarEstado(estado);
+        return PartidoResponse.desdeEntidad(partidoRepository.saveAndFlush(partido));
     }
 
     private PartidoConsultaResponse aConsultaResponse(Partido partido) {

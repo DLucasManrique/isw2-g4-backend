@@ -7,9 +7,15 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestControllerAdvice(assignableTypes = EquipoController.class)
 public class EquipoExceptionHandler {
+    @ExceptionHandler(ResponseStatusException.class)
+    public ProblemDetail negocio(ResponseStatusException ex) {
+        return ProblemDetail.forStatusAndDetail(ex.getStatusCode(), ex.getReason());
+    }
+
     @ExceptionHandler(RecursoNoEncontradoException.class)
     public ProblemDetail noEncontrado(RecursoNoEncontradoException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
