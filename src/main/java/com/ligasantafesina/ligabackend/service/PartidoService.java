@@ -6,6 +6,8 @@ import com.ligasantafesina.ligabackend.dto.PartidoConsultaResponse;
 import com.ligasantafesina.ligabackend.dto.MarcadorResponse;
 import com.ligasantafesina.ligabackend.entity.Equipo;
 import com.ligasantafesina.ligabackend.entity.Partido;
+import com.ligasantafesina.ligabackend.entity.Usuario;
+import com.ligasantafesina.ligabackend.entity.Torneo;
 import com.ligasantafesina.ligabackend.exception.*;
 import com.ligasantafesina.ligabackend.repository.*;
 import org.springframework.stereotype.Service;
@@ -24,16 +26,19 @@ public class PartidoService {
     private final CanchaRepository canchaRepository;
     private final ArbitroRepository arbitroRepository;
     private final ResultadoPartidoRepository resultadoPartidoRepository;
+    private final UsuarioService usuarioService;
 
     public PartidoService(PartidoRepository partidoRepository, TorneoRepository torneoRepository,
                           EquipoRepository equipoRepository, CanchaRepository canchaRepository,
-                          ArbitroRepository arbitroRepository, ResultadoPartidoRepository resultadoPartidoRepository) {
+                          ArbitroRepository arbitroRepository, ResultadoPartidoRepository resultadoPartidoRepository,
+                          UsuarioService usuarioService) {
         this.partidoRepository = partidoRepository;
         this.torneoRepository = torneoRepository;
         this.equipoRepository = equipoRepository;
         this.canchaRepository = canchaRepository;
         this.arbitroRepository = arbitroRepository;
         this.resultadoPartidoRepository = resultadoPartidoRepository;
+        this.usuarioService = usuarioService;
     }
 
     @Transactional(readOnly = true)
@@ -51,9 +56,11 @@ public class PartidoService {
     }
 
     @Transactional
-    public PartidoResponse cambiarEstado(Integer id, String estado) {
+    public PartidoResponse cambiarEstado(Integer id, String estado, Long usuarioId) {
+        Usuario usuario = usuarioService.obtenerUsuarioActivo(usuarioId);
         Partido partido = partidoRepository.findById(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException("No existe el partido indicado."));
+        usuarioService.validarOperacionPartido(usuario, partido);
         boolean permitida = "PROGRAMADO".equals(partido.getEstado())
                 && ("EN_JUEGO".equals(estado) || "SUSPENDIDO".equals(estado))
                 || "EN_JUEGO".equals(partido.getEstado())
@@ -76,21 +83,25 @@ public class PartidoService {
     }
 
     @Transactional
-    public PartidoResponse crear(PartidoRequest request) {
+    public PartidoResponse crear(PartidoRequest request, Long usuarioId) {
+        usuarioService.validarAdministrador(usuarioId);
         if (request.equipoLocalId().equals(request.equipoVisitanteId())) {
             throw new PartidoInvalidoException("El equipo local y el visitante deben ser diferentes.");
         }
-        if (!torneoRepository.existsById(request.torneoId())) {
-            throw new RecursoNoEncontradoException("No existe el torneo indicado.");
+        List<Torneo> torneos = torneoRepository.findByAnio(2026);
+        if (torneos.size() != 1) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Debe existir exactamente un torneo correspondiente a 2026.");
         }
+        Integer torneoId = torneos.get(0).getId();
         Equipo local = equipoRepository.findById(request.equipoLocalId())
                 .orElseThrow(() -> new RecursoNoEncontradoException("No existe el equipo local indicado."));
         Equipo visitante = equipoRepository.findById(request.equipoVisitanteId())
                 .orElseThrow(() -> new RecursoNoEncontradoException("No existe el equipo visitante indicado."));
-        if (!local.getTorneoId().equals(request.torneoId())) {
+        if (!local.getTorneoId().equals(torneoId)) {
             throw new PartidoInvalidoException("El equipo local no pertenece al torneo indicado.");
         }
-        if (!visitante.getTorneoId().equals(request.torneoId())) {
+        if (!visitante.getTorneoId().equals(torneoId)) {
             throw new PartidoInvalidoException("El equipo visitante no pertenece al torneo indicado.");
         }
         if (!canchaRepository.existsById(request.canchaId())) {
@@ -109,7 +120,7 @@ public class PartidoService {
             throw new DisponibilidadConflictoException(
                     "El árbitro tiene otro partido con una separación menor a 2 horas.");
         }
-        Partido partido = new Partido(request.torneoId(), request.numeroFecha(), request.equipoLocalId(),
+        Partido partido = new Partido(torneoId, request.numeroFecha(), request.equipoLocalId(),
                 request.equipoVisitanteId(), request.canchaId(), request.arbitroId(), request.fechaHoraInicio());
         return PartidoResponse.desdeEntidad(partidoRepository.saveAndFlush(partido));
     }

@@ -23,6 +23,9 @@ public class Usuario {
     @Column(name = "rol", nullable = false, length = 20)
     private String rol;
 
+    @Column(name = "equipo_id")
+    private Integer equipoId;
+
     @Column(name = "activo", nullable = false)
     private Boolean activo = true;
 
@@ -74,6 +77,14 @@ public class Usuario {
 
     public Boolean getActivo() {
         return activo;
+    }
+
+    public Integer getEquipoId() {
+        return equipoId;
+    }
+
+    public void setEquipoId(Integer equipoId) {
+        this.equipoId = equipoId;
     }
 
     public void setActivo(Boolean activo) {

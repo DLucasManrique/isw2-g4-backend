@@ -5,6 +5,7 @@ import com.ligasantafesina.ligabackend.dto.EventoResponse;
 import com.ligasantafesina.ligabackend.entity.EventoPartido;
 import com.ligasantafesina.ligabackend.entity.Jugador;
 import com.ligasantafesina.ligabackend.entity.Partido;
+import com.ligasantafesina.ligabackend.entity.Usuario;
 import com.ligasantafesina.ligabackend.repository.EventoPartidoRepository;
 import com.ligasantafesina.ligabackend.repository.JugadorRepository;
 import com.ligasantafesina.ligabackend.repository.PartidoRepository;
@@ -21,13 +22,15 @@ public class EventoPartidoService {
     private final EventoPartidoRepository eventoRepository;
     private final PartidoRepository partidoRepository;
     private final JugadorRepository jugadorRepository;
+    private final UsuarioService usuarioService;
 
     public EventoPartidoService(EventoPartidoRepository eventoRepository,
                                 PartidoRepository partidoRepository,
-                                JugadorRepository jugadorRepository) {
+                                JugadorRepository jugadorRepository, UsuarioService usuarioService) {
         this.eventoRepository = eventoRepository;
         this.partidoRepository = partidoRepository;
         this.jugadorRepository = jugadorRepository;
+        this.usuarioService = usuarioService;
     }
 
     public List<EventoResponse> listarPorPartido(Long partidoId) {
@@ -38,8 +41,9 @@ public class EventoPartidoService {
     }
 
     @Transactional
-    public EventoResponse registrarEvento(EventoRequest request) {
-        validarEvento(request.getPartidoId(), request.getJugadorId(), request.getTipo(), request.getMinuto());
+    public EventoResponse registrarEvento(EventoRequest request, Long usuarioId) {
+        Usuario usuario = usuarioService.obtenerUsuarioActivo(usuarioId);
+        validarEvento(usuario, request.getPartidoId(), request.getJugadorId(), request.getTipo(), request.getMinuto());
         EventoPartido evento = new EventoPartido();
         evento.setPartidoId(request.getPartidoId());
         evento.setJugadorId(request.getJugadorId());
@@ -49,7 +53,8 @@ public class EventoPartidoService {
     }
 
     @Transactional
-    public EventoResponse corregirEvento(Long partidoId, Long id, EventoRequest request) {
+    public EventoResponse corregirEvento(Long partidoId, Long id, EventoRequest request, Long usuarioId) {
+        Usuario usuario = usuarioService.obtenerUsuarioActivo(usuarioId);
         EventoPartido evento = obtenerEvento(partidoId, id);
         if (request.getPartidoId() != null && !request.getPartidoId().equals(evento.getPartidoId())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
@@ -58,7 +63,7 @@ public class EventoPartidoService {
         Long jugadorId = request.getJugadorId() != null ? request.getJugadorId() : evento.getJugadorId();
         String tipo = request.getTipo() != null ? request.getTipo() : evento.getTipo();
         Integer minuto = request.getMinuto() != null ? request.getMinuto() : evento.getMinuto();
-        validarEvento(evento.getPartidoId(), jugadorId, tipo, minuto);
+        validarEvento(usuario, evento.getPartidoId(), jugadorId, tipo, minuto);
         evento.setJugadorId(jugadorId);
         evento.setTipo(tipo);
         evento.setMinuto(minuto);
@@ -66,9 +71,12 @@ public class EventoPartidoService {
     }
 
     @Transactional
-    public void eliminarEvento(Long partidoId, Long id) {
+    public void eliminarEvento(Long partidoId, Long id, Long usuarioId) {
+        Usuario usuario = usuarioService.obtenerUsuarioActivo(usuarioId);
         EventoPartido evento = obtenerEvento(partidoId, id);
-        validarEnJuego(obtenerPartido(evento.getPartidoId()));
+        Partido partido = obtenerPartido(evento.getPartidoId());
+        usuarioService.validarOperacionPartido(usuario, partido);
+        validarEnJuego(partido);
         eventoRepository.delete(evento);
     }
 
@@ -106,8 +114,9 @@ public class EventoPartidoService {
         }
     }
 
-    private void validarEvento(Long partidoId, Long jugadorId, String tipo, Integer minuto) {
+    private void validarEvento(Usuario usuario, Long partidoId, Long jugadorId, String tipo, Integer minuto) {
         Partido partido = obtenerPartido(partidoId);
+        usuarioService.validarOperacionPartido(usuario, partido);
         validarEnJuego(partido);
         Jugador jugador = jugadorRepository.findById(validarId(jugadorId, "jugador"))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,

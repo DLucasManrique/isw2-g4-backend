@@ -6,6 +6,8 @@ import com.ligasantafesina.ligabackend.dto.PartidoConsultaResponse;
 import com.ligasantafesina.ligabackend.dto.EstadoPartidoRequest;
 import com.ligasantafesina.ligabackend.service.PartidoService;
 import jakarta.validation.Valid;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.net.URI;
@@ -31,14 +33,22 @@ public class PartidoController {
     }
 
     @PostMapping
-    public ResponseEntity<PartidoResponse> crear(@Valid @RequestBody PartidoRequest request) {
-        PartidoResponse response = service.crear(request);
+    public ResponseEntity<PartidoResponse> crear(@Valid @RequestBody PartidoRequest request,
+                                                HttpServletRequest httpRequest) {
+        PartidoResponse response = service.crear(request, usuarioId(httpRequest));
         return ResponseEntity.created(URI.create("/api/partidos/" + response.id())).body(response);
     }
 
     @PatchMapping("/{id}/estado")
     public PartidoResponse cambiarEstado(@PathVariable Integer id,
-                                        @Valid @RequestBody EstadoPartidoRequest request) {
-        return service.cambiarEstado(id, request.estado());
+                                        @Valid @RequestBody EstadoPartidoRequest request,
+                                        HttpServletRequest httpRequest) {
+        return service.cambiarEstado(id, request.estado(), usuarioId(httpRequest));
+    }
+
+    private Long usuarioId(HttpServletRequest request) {
+        HttpSession session = request.getSession(false);
+        Object usuarioId = session != null ? session.getAttribute("usuarioId") : null;
+        return usuarioId instanceof Long id ? id : null;
     }
 }

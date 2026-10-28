@@ -6,13 +6,15 @@ public class UsuarioResponse {
     private String nombreCompleto;
     private String rol;
     private Boolean activo;
+    private Integer equipoId;
 
-    public UsuarioResponse(Long id, String username, String nombreCompleto, String rol, Boolean activo) {
+    public UsuarioResponse(Long id, String username, String nombreCompleto, String rol, Boolean activo, Integer equipoId) {
         this.id = id;
         this.username = username;
         this.nombreCompleto = nombreCompleto;
         this.rol = rol;
         this.activo = activo;
+        this.equipoId = equipoId;
     }
 
     public Long getId() {
@@ -33,5 +35,9 @@ public class UsuarioResponse {
 
     public Boolean getActivo() {
         return activo;
+    }
+
+    public Integer getEquipoId() {
+        return equipoId;
     }
 }
