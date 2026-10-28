@@ -3,6 +3,7 @@ package com.ligasantafesina.ligabackend.service;
 import com.ligasantafesina.ligabackend.dto.JugadorRequest;
 import com.ligasantafesina.ligabackend.dto.JugadorResponse;
 import com.ligasantafesina.ligabackend.entity.Jugador;
+import com.ligasantafesina.ligabackend.entity.Usuario;
 import com.ligasantafesina.ligabackend.repository.JugadorRepository;
 
 import jakarta.validation.Valid;
@@ -25,15 +26,19 @@ public class JugadorService {
 
     private final JugadorRepository jugadorRepository;
     private final JdbcTemplate jdbcTemplate;
+    private final UsuarioService usuarioService;
 
     public JugadorService(JugadorRepository jugadorRepository,
-                          JdbcTemplate jdbcTemplate) {
+                          JdbcTemplate jdbcTemplate, UsuarioService usuarioService) {
         this.jugadorRepository = jugadorRepository;
         this.jdbcTemplate = jdbcTemplate;
+        this.usuarioService = usuarioService;
     }
 
     @Transactional
-    public JugadorResponse crear(@NotNull @Valid JugadorRequest request) {
+    public JugadorResponse crear(@NotNull @Valid JugadorRequest request, Long usuarioId) {
+        Usuario usuario = usuarioService.obtenerUsuarioActivo(usuarioId);
+        validarEquipoPermitido(usuario, request.equipoId());
         validarEquipoExistente(request.equipoId());
 
         String dni = request.dni().strip();
@@ -80,9 +85,12 @@ public class JugadorService {
     @Transactional
     public JugadorResponse modificar(
             Integer id,
-            @NotNull @Valid JugadorRequest request) {
+            @NotNull @Valid JugadorRequest request, Long usuarioId) {
 
+        Usuario usuario = usuarioService.obtenerUsuarioActivo(usuarioId);
         Jugador jugador = buscarPorId(id);
+        validarEquipoPermitido(usuario, jugador.getEquipoId());
+        validarEquipoPermitido(usuario, request.equipoId());
 
         if (!jugador.getEquipoId().equals(request.equipoId())) {
             throw new ResponseStatusException(
@@ -111,10 +119,20 @@ public class JugadorService {
     }
 
     @Transactional
-    public void darDeBaja(Integer id) {
+    public void darDeBaja(Integer id, Long usuarioId) {
+        Usuario usuario = usuarioService.obtenerUsuarioActivo(usuarioId);
         Jugador jugador = buscarPorId(id);
+        validarEquipoPermitido(usuario, jugador.getEquipoId());
         jugador.darDeBaja();
         jugadorRepository.save(jugador);
+    }
+
+    private void validarEquipoPermitido(Usuario usuario, Integer equipoId) {
+        if ("ADMIN".equals(usuario.getRol())) return;
+        if (!"DELEGADO".equals(usuario.getRol()) || !equipoId.equals(usuario.getEquipoId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "Un DELEGADO solo puede gestionar jugadores de su equipo");
+        }
     }
 
     private Jugador buscarPorId(Integer id) {

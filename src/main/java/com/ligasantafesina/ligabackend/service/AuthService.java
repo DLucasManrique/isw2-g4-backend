@@ -27,6 +27,6 @@ public class AuthService {
             throw new CredencialesInvalidasException();
         }
         return new LoginResponse(usuario.getId(), usuario.getUsername(),
-                usuario.getNombreCompleto(), usuario.getRol());
+                usuario.getNombreCompleto(), usuario.getRol(), usuario.getEquipoId());
     }
 }

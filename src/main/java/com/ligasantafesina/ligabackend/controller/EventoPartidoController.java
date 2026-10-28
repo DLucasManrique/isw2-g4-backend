@@ -3,6 +3,8 @@ package com.ligasantafesina.ligabackend.controller;
 import com.ligasantafesina.ligabackend.dto.EventoRequest;
 import com.ligasantafesina.ligabackend.dto.EventoResponse;
 import com.ligasantafesina.ligabackend.service.EventoPartidoService;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -26,7 +28,8 @@ public class EventoPartidoController {
 
     @PostMapping({"/eventos", "/partidos/{partidoId}/eventos"})
     public ResponseEntity<EventoResponse> registrarEvento(
-            @PathVariable(required = false) Long partidoId, @RequestBody EventoRequest request) {
+            @PathVariable(required = false) Long partidoId, @RequestBody EventoRequest request,
+            HttpServletRequest httpRequest) {
         if (partidoId != null) {
             if (request.getPartidoId() != null && !partidoId.equals(request.getPartidoId())) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
@@ -34,20 +37,26 @@ public class EventoPartidoController {
             }
             request.setPartidoId(partidoId);
         }
-        return new ResponseEntity<>(eventoService.registrarEvento(request), HttpStatus.CREATED);
+        return new ResponseEntity<>(eventoService.registrarEvento(request, usuarioId(httpRequest)), HttpStatus.CREATED);
     }
 
     @PutMapping({"/eventos/{id}", "/partidos/{partidoId}/eventos/{id}"})
     public ResponseEntity<EventoResponse> corregirEvento(
             @PathVariable(required = false) Long partidoId, @PathVariable Long id,
-            @RequestBody EventoRequest request) {
-        return ResponseEntity.ok(eventoService.corregirEvento(partidoId, id, request));
+            @RequestBody EventoRequest request, HttpServletRequest httpRequest) {
+        return ResponseEntity.ok(eventoService.corregirEvento(partidoId, id, request, usuarioId(httpRequest)));
     }
 
     @DeleteMapping({"/eventos/{id}", "/partidos/{partidoId}/eventos/{id}"})
     public ResponseEntity<Void> eliminarEvento(
-            @PathVariable(required = false) Long partidoId, @PathVariable Long id) {
-        eventoService.eliminarEvento(partidoId, id);
+            @PathVariable(required = false) Long partidoId, @PathVariable Long id, HttpServletRequest request) {
+        eventoService.eliminarEvento(partidoId, id, usuarioId(request));
         return ResponseEntity.noContent().build();
+    }
+
+    private Long usuarioId(HttpServletRequest request) {
+        HttpSession session = request.getSession(false);
+        Object usuarioId = session != null ? session.getAttribute("usuarioId") : null;
+        return usuarioId instanceof Long id ? id : null;
     }
 }

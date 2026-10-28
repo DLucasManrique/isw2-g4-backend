@@ -5,6 +5,7 @@ public class UsuarioRequest {
     private String password;
     private String nombreCompleto;
     private String rol;
+    private Integer equipoId;
     private Boolean activo;
 
     public String getUsername() {
@@ -41,6 +42,14 @@ public class UsuarioRequest {
 
     public Boolean getActivo() {
         return activo;
+    }
+
+    public Integer getEquipoId() {
+        return equipoId;
+    }
+
+    public void setEquipoId(Integer equipoId) {
+        this.equipoId = equipoId;
     }
 
     public void setActivo(Boolean activo) {

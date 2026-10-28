@@ -5,7 +5,6 @@ import jakarta.validation.constraints.Positive;
 import java.time.LocalDateTime;
 
 public record PartidoRequest(
-        @NotNull @Positive Integer torneoId,
         @NotNull @Positive Integer numeroFecha,
         @NotNull @Positive Integer equipoLocalId,
         @NotNull @Positive Integer equipoVisitanteId,
